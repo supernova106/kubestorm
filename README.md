@@ -1,3 +1,5 @@
+![Go](https://github.com/supernova106/kubestorm/workflows/Go/badge.svg?branch=master)
+
 # kubestorm
 
 - To provide a RESTful API to retrieve Kubernetes resources, allow automation and customization rather than `kubectl`
