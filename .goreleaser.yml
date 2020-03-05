@@ -1,0 +1,55 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+builds:
+  - env:
+      - CGO_ENABLED=0
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+github_urls:
+  api: https://github.com/api/v3/
+  upload: https://github.com/api/uploads/
+  download: https://github.com/
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+
+dockers:
+  - image_templates:
+      - "supernova106/kubestorm:{{ .Tag }}"
+      - "supernova106/kubestorm:latest"
+    binaries:
+      - kubestorm
+    skip_push: false
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--label=org.label-schema.version={{.Version}}"
+      - "--label=org.label-schema.name={{.ProjectName}}"
+      - "--label=maintainer=Binh Nguyen>"
+    # - "--build-arg=FOO={{.Env.Bar}}"
+    # If your Dockerfile copies files other than the binary itself,
+    # you should list them here as well.
+    # Note that goreleaser will create the same structure inside the temporary
+    # folder, so if you add `foo/bar.json` here, on your Dockerfile you can
+    # `COPY foo/bar.json /whatever.json`.
+    # Also note that the paths here are relative to the folder in which
+    # goreleaser is being run.
+    # This field does not support wildcards, you can add an entire folder here
+    # and use wildcards when you `COPY`/`ADD` in your Dockerfile.
+    extra_files:
+      # - config.yml

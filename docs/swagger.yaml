@@ -1,0 +1,85 @@
+basePath: /v1
+definitions:
+  routers.APIStatus:
+    properties:
+      status:
+        type: string
+    type: object
+  routers.AccountListClusterOutput:
+    properties:
+      accountID:
+        type: string
+      clusters:
+        items:
+          $ref: "#/definitions/routers.ListClusterOutput"
+        type: array
+      metadata:
+        $ref: "#/definitions/routers.AccountMetadata"
+        type: object
+    type: object
+  routers.AccountMetadata:
+    properties:
+      environment:
+        type: string
+      name:
+        type: string
+    type: object
+  routers.ListClusterOutput:
+    properties:
+      createdAt:
+        description:
+          The Unix epoch timestamp in seconds for when the cluster was
+          created.
+        type: string
+      name:
+        description: The name of the cluster.
+        type: string
+      region:
+        description: AWS Region
+        type: string
+      status:
+        description: The current status of the cluster.
+        type: string
+      version:
+        description: The Kubernetes server version for the cluster.
+        type: string
+      vpcId:
+        description: Vpc ID of the cluster
+        type: string
+    type: object
+info:
+  contact:
+    email: ntbinh106@gmail.com
+    name: Binh Nguyen
+    url: http://www.swagger.io/support
+  description: This is a API to interact with Kubernetes Services.
+  license:
+    name: MIT Licensed
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Simple Kubernetes Dashboard
+  version: "1.0"
+paths:
+  /eks/list-clusters:
+    get:
+      description: get string by GET
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/routers.AccountListClusterOutput"
+      summary: List EKS Clusters
+  /status:
+    get:
+      description: get string by GET
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/routers.APIStatus"
+      summary: API Healthcheck
+swagger: "2.0"
