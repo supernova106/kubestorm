@@ -102,12 +102,10 @@ echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }
 
 ### ADD cluster auth
 
+Create the following script `add-cluster.sh`
+
 ```sh
-curl --location --request POST 'http://localhost:8080/v1/auth/CLUSTER_NAME' \
---header 'Content-Type: multipart/form-data; boundary=--------------------------300625750666293208708157' \
---form 'server=CLUSTER_URL' \
---form 'token=CLUSTER_TOKEN' \
---form 'serverCADataString=CLUSTER_CADA_BASE64'
+./scripts/add-cluster.sh <cluster_name>
 ```
 
 ### GET cluster auth
