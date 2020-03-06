@@ -102,7 +102,7 @@ echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }
 
 ### ADD cluster auth
 
-Create the following script `add-cluster.sh`
+Execute the following script to add cluster
 
 ```sh
 ./scripts/add-cluster.sh <cluster_name>
