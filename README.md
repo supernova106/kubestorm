@@ -2,8 +2,8 @@
 
 # kubestorm
 
-- To provide a RESTful API to retrieve Kubernetes resources, allow automation and customization rather than `kubectl`
-- Also provide Simple Kubnernetes Dashboard Across Platform
+- A RESTful API to interact with Kubernetes resources
+- Easy to customize and integrate with UI/Chatbot/Automation
 
 It consists of 3 main components:
 
@@ -26,6 +26,12 @@ swag init
 
 ## Development
 
+Clone the repository
+
+```sh
+git clone https://github.com/supernova106/kubestorm.git
+```
+
 Dependency management tools are built into go 1.11+ in the form of go modules. These are used by the main Kubernetes repo (>= v1.15.0) and client-go (>= kubernetes-1.15.0) to manage dependencies. If you are using go 1.11 or 1.12 and are working with a project located within \$GOPATH, you must opt into using go modules:
 
 ```sh
@@ -35,10 +41,11 @@ export GO111MODULE=on
 Start the API locally
 
 ```sh
+cd kubestorm/
 go run main.go
 ```
 
-Or
+Or using the pre-built binary
 
 ```sh
 ./kubestorm
