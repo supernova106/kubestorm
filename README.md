@@ -102,31 +102,29 @@ Get `token`
 echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }}' $(kubectl get sa kubestorm-user -n kube-system -o go-template="{{range .secrets}}{{.name}}{{end}}")) | base64 --decode
 ```
 
-### ADD cluster auth
+### CRUD cluster auth
 
 Execute the following script to add cluster
 
 ```bash
+export CLUSTER_NAME="foo"
+
 # replace with actual URL of kubestorm
-./scripts/add_cluster.sh <cluster_name> http://localhost:8080
+./scripts/add_cluster.sh "${CLUSTER_NAME}" http://localhost:8080
+
+# get auth
+curl --location --request GET "http://localhost:8080/v1/auth/${CLUSTER_NAME}"
+
+# delete
+curl --location --request DELETE "http://localhost:8080/v1/auth/${CLUSTER_NAME}"
 ```
 
-### GET cluster auth
+### GET Kubernetes resources from a cluster
 
 ```sh
-curl --location --request GET 'http://localhost:8080/v1/auth/CLUSTER_NAME'
-```
-
-### GET nodes from a cluster
-
-```sh
-curl --location --request GET 'http://localhost:8080/v1/nodes/CLUSTER_NAME'
-```
-
-### DELETE cluster auth
-
-```sh
-curl --location --request DELETE 'http://localhost:8080/v1/auth/CLUSTER_NAME'
+curl --location --request GET "http://localhost:8080/v1/nodes/${CLUSTER_NAME}"
+curl --location --request GET "http://localhost:8080/v1/namespaces/${CLUSTER_NAME}"
+curl --location --request GET "http://localhost:8080/v1/pods/${CLUSTER_NAME}"
 ```
 
 ## Release
