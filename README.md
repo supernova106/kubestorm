@@ -2,8 +2,8 @@
 
 # kubestorm
 
-- To provide a RESTful API to retrieve Kubernetes resources, allow automation and customization rather than `kubectl`
-- Also provide Simple Kubnernetes Dashboard Across Platform
+- A RESTful API to interact with Kubernetes resources
+- Easy to customize and integrate with UI/Chatbot/Automation
 
 It consists of 3 main components:
 
@@ -31,11 +31,14 @@ export GO111MODULE=on
 
 Start the API locally
 
-```sh
+```bash
+# Clone the repository
+git clone https://github.com/supernova106/kubestorm.git
+cd kubestorm/
 go run main.go
 ```
 
-Or
+Or using the pre-built binary
 
 ```sh
 ./kubestorm
