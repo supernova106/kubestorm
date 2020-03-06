@@ -97,7 +97,7 @@ echo $(kubectl get secret -n kube-system -o go-template='{{index .data "ca.crt" 
 Get `token`
 
 ```sh
-echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }}' $(kubectl get sa kubestorm-user -n kube-system -o go-template="{{range .secrets}}{{.name}}{{end}}"))
+echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }}' $(kubectl get sa kubestorm-user -n kube-system -o go-template="{{range .secrets}}{{.name}}{{end}}")) | base64 --decode
 ```
 
 ### ADD cluster auth
