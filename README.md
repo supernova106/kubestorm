@@ -11,11 +11,6 @@ It consists of 3 main components:
 - Frontend (Vue.js) (BEING DEVELOPED)
 - Persistent Layer to store configurations
 
-## Features
-
-- To support cross platform Kubernetes Management
-- Simple UI to view Kubernetes clusters
-
 ## Docs
 
 - Update swagger docs: [https://github.com/swaggo/swag](https://github.com/swaggo/swag)
@@ -26,7 +21,9 @@ swag init
 
 ## Development
 
-Dependency management tools are built into go 1.11+ in the form of go modules. These are used by the main Kubernetes repo (>= v1.15.0) and client-go (>= kubernetes-1.15.0) to manage dependencies. If you are using go 1.11 or 1.12 and are working with a project located within \$GOPATH, you must opt into using go modules:
+Contributions are welcome via PRs with Issues!
+
+Use Go Module
 
 ```sh
 export GO111MODULE=on
@@ -43,6 +40,8 @@ Or
 ```sh
 ./kubestorm
 ```
+
+## Usage
 
 ### Generate Auth TOKEN for your Kubernetes cluster
 
@@ -104,8 +103,9 @@ echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }
 
 Execute the following script to add cluster
 
-```sh
-./scripts/add-cluster.sh <cluster_name>
+```bash
+# replace with actual URL of kubestorm
+./scripts/add_cluster.sh <cluster_name> http://localhost:8080
 ```
 
 ### GET cluster auth
