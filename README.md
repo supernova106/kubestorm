@@ -127,11 +127,8 @@ curl --location --request GET "http://localhost:8080/api/v1/resources?cluster=${
 
 ## Release
 
-- Create new release
-
-```sh
-make release
-```
+- The release process is automated via git tagging.
+- Check out the `.github/workflows/goreleaser.yml`
 
 ## Todo
 
