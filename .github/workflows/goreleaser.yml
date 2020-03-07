@@ -1,10 +1,9 @@
-name: Go
+name: goreleaser
 
 on:
   push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -25,14 +24,11 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Get dependencies
-        run: |
-          mkdir -p ${HOME}/go/bin
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
-
-      - name: Build
-        run: go build -v .
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GO_GITHUB_TOKEN }}
