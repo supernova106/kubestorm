@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	klog "k8s.io/klog"
 )
 
 // APIStatus godoc
@@ -40,11 +39,9 @@ func homeDir() string {
 // isFileExist godoc
 func isFileExist(fileName string) bool {
 	if _, err := os.Stat(fileName); err == nil {
-		klog.V(1).Infof("File %v exists", fileName)
 		return true
 	}
 
-	klog.V(1).Infof("File %v does not exist\n", fileName)
 	return false
 }
 
@@ -66,4 +63,24 @@ func catchError(e error) {
 func writeToFile(data []byte, fileName string) {
 	err := ioutil.WriteFile(fileName, data, 0644)
 	catchError(err)
+}
+
+// Error godoc
+func Error(c *gin.Context, authError *AuthError) bool {
+	if authError.Error != nil {
+		c.Error(authError.Error)
+		c.AbortWithStatusJSON(authError.Code, gin.H{"status": false, "error": authError.Error.Error(), "message": authError.Message})
+		return true // signal that there was an error and the caller should return
+	}
+	return false // no error, can continue
+}
+
+// ErrorK8sClient godoc
+func ErrorK8sClient(c *gin.Context, err error) bool {
+	if err != nil {
+		c.Error(err)
+		c.AbortWithStatusJSON(400, gin.H{"status": false, "error": err.Error(), "message": "something went wrong"})
+		return true // signal that there was an error and the caller should return
+	}
+	return false // no error, can continue
 }

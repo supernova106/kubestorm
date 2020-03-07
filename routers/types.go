@@ -1,15 +1,21 @@
 package routers
 
-// StormCluster godoc
-type StormCluster struct {
-	ServerName         string `json:"serverName"`
-	Server             string `json:"server"`
-	Token              string `json:"token"`
-	ServerCADataString string `json:"serverCADataString"`
+import v1 "k8s.io/api/core/v1"
+
+// AuthConfig godoc
+type AuthConfig struct {
+	ServerName         string `json:"serverName" binding:"required"`
+	Server             string `json:"server" binding:"required"`
+	Token              string `json:"token" binding:"required"`
+	ServerCADataString string `json:"serverCADataString" binding:"required"`
 }
 
-// AuthFriendlyErr godoc
-type AuthFriendlyErr struct {
-	HTTPStatus string `json: "httpStatus"`
-	Message    string `json: "message"`
+// AuthError godoc
+type AuthError struct {
+	Error   error  `json: "error"`
+	Code    int    `json: "code"`
+	Message string `json: "message"`
 }
+
+// PodList godoc
+type PodList v1.PodList

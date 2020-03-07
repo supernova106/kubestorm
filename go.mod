@@ -17,7 +17,7 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.5
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
-	k8s.io/api v0.17.3 // indirect
+	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.0.0-20191114101535-6c5935290e33
 	k8s.io/klog v1.0.0

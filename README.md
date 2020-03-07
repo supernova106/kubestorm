@@ -113,18 +113,16 @@ export CLUSTER_NAME="foo"
 ./scripts/add_cluster.sh "${CLUSTER_NAME}" http://localhost:8080
 
 # get auth
-curl --location --request GET "http://localhost:8080/v1/auth/${CLUSTER_NAME}"
+curl --location --request GET "http://localhost:8080/api/v1/auth/${CLUSTER_NAME}"
 
 # delete
-curl --location --request DELETE "http://localhost:8080/v1/auth/${CLUSTER_NAME}"
+curl --location --request DELETE "http://localhost:8080/api/v1/auth/${CLUSTER_NAME}"
 ```
 
 ### GET Kubernetes resources from a cluster
 
 ```sh
-curl --location --request GET "http://localhost:8080/v1/nodes/${CLUSTER_NAME}"
-curl --location --request GET "http://localhost:8080/v1/namespaces/${CLUSTER_NAME}"
-curl --location --request GET "http://localhost:8080/v1/pods/${CLUSTER_NAME}"
+curl --location --request GET "http://localhost:8080/api/v1/resources?cluster=${CLUSTER_NAME}&type=nodes"
 ```
 
 ## Release

@@ -9,131 +9,102 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetPods godoc
-// @Summary Get Kubernetes Pods
-// @Description get string by GET
-// @Produce  json
-// @Success 200 {object} Podlist
-// @Router /pods/ [get]
-func GetPods(c *gin.Context) {
-	serverName := strings.TrimSpace(c.Param("name"))
+// GetResources godoc
+func GetResources(c *gin.Context) {
+	cluster := c.Query("cluster")
+	resourcesType := c.Query("type")
 
-	clientset, authFriendlyErr := getClientSet(serverName)
-	if authFriendlyErr.HTTPStatus == "400" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else if authFriendlyErr.HTTPStatus == "404" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else {
-		pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
-		catchError(err)
-		c.JSON(http.StatusOK, pods)
-	}
-}
-
-// GetNodes godoc
-func GetNodes(c *gin.Context) {
-	serverName := strings.TrimSpace(c.Param("name"))
-
-	clientset, authFriendlyErr := getClientSet(serverName)
-	if authFriendlyErr.HTTPStatus == "400" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else if authFriendlyErr.HTTPStatus == "404" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else {
-		nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
-		catchError(err)
-		c.JSON(http.StatusOK, nodes)
-	}
-}
-
-// GetNamespaces godoc
-func GetNamespaces(c *gin.Context) {
-	serverName := strings.TrimSpace(c.Param("name"))
-
-	clientset, authFriendlyErr := getClientSet(serverName)
-	if authFriendlyErr.HTTPStatus == "400" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else if authFriendlyErr.HTTPStatus == "404" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message":    authFriendlyErr.Message,
-			"httpStatus": authFriendlyErr.HTTPStatus,
-		})
-	} else {
-		namespaces, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
-		catchError(err)
-		c.JSON(http.StatusOK, namespaces)
+	clientset, authError := getClientSet(cluster)
+	if !Error(c, authError) {
+		switch resourcesType {
+		case "services":
+			data, err := clientset.CoreV1().Services("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "serviceaccounts":
+			data, err := clientset.CoreV1().ServiceAccounts("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "limitranges":
+			data, err := clientset.CoreV1().LimitRanges("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "pods":
+			data, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "podtemplates":
+			data, err := clientset.CoreV1().PodTemplates("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "nodes":
+			data, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "configmaps":
+			data, err := clientset.CoreV1().ConfigMaps("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "namespaces":
+			data, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		case "events":
+			data, err := clientset.CoreV1().Events("").List(metav1.ListOptions{})
+			if !ErrorK8sClient(c, err) {
+				c.JSON(http.StatusOK, data)
+			}
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "invalid request",
+				"statue":  false,
+			})
+		}
 	}
 }
 
 // Auth godoc
 func Auth(c *gin.Context) {
-	serverName := strings.TrimSpace(c.Param("name"))
+	cluster := strings.TrimSpace(c.Param("cluster"))
 
 	switch requestMethod := c.Request.Method; requestMethod {
 	case "POST":
-		stormCluster := &StormCluster{
-			ServerName:         serverName,
+		authConfig := &AuthConfig{
+			ServerName:         cluster,
 			Server:             strings.TrimSpace(c.PostForm("server")),
 			Token:              strings.TrimSpace(c.PostForm("token")),
 			ServerCADataString: strings.TrimSpace(c.PostForm("serverCADataString")),
 		}
 
-		_, authFriendlyErr := postClusterAuth(stormCluster)
-
-		if authFriendlyErr.HTTPStatus == "400" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message":    authFriendlyErr.Message,
-				"httpStatus": authFriendlyErr.HTTPStatus,
-			})
-		} else if authFriendlyErr.HTTPStatus == "401" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"message":    authFriendlyErr.Message,
-				"httpStatus": authFriendlyErr.HTTPStatus,
-			})
-		} else if authFriendlyErr.HTTPStatus == "409" {
-			c.JSON(http.StatusConflict, gin.H{
-				"message":    authFriendlyErr.Message,
-				"httpStatus": authFriendlyErr.HTTPStatus,
-			})
-		} else {
+		serverVersion, authError := postAuthConfig(authConfig)
+		if !Error(c, authError) {
 			c.JSON(http.StatusOK, gin.H{
-				"message": fmt.Sprintf("%v is updated successfully!", stormCluster.ServerName),
+				"message": fmt.Sprintf("%v is updated successfully!", authConfig.ServerName),
+				"statue":  true,
+				"data":    serverVersion,
 			})
 		}
+
 	case "GET":
-		stormCluster := getClusterAuth(serverName)
-		c.JSON(http.StatusOK, stormCluster)
+		authConfig, authError := getAuthConfig(cluster)
+		if !Error(c, authError) {
+			c.JSON(http.StatusOK, authConfig)
+		}
+
 	case "DELETE":
-		authFriendlyErr := deleteClusterAuth(serverName)
-		if authFriendlyErr.HTTPStatus == "404" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"message":    authFriendlyErr.Message,
-				"httpStatus": authFriendlyErr.HTTPStatus,
-			})
-		} else if authFriendlyErr.HTTPStatus == "200" {
+		authError := deleteAuthConfig(cluster)
+		if !Error(c, authError) {
 			c.JSON(http.StatusOK, gin.H{
-				"message":    authFriendlyErr.Message,
-				"httpStatus": authFriendlyErr.HTTPStatus,
-			})
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message":    "Something went wrong!",
-				"httpStatus": http.StatusBadRequest,
+				"message": fmt.Sprintf("%v is successfully removed!", cluster),
+				"statue":  true,
 			})
 		}
 	default:

@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,8 +13,9 @@ import (
 
 	b64 "encoding/base64"
 
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -40,24 +42,26 @@ func setupKubeconfigFromFile() *kubernetes.Clientset {
 	return clientset
 }
 
-// postClusterAuth godoc
-func postClusterAuth(stormCluster *StormCluster) (*kubernetes.Clientset, *AuthFriendlyErr) {
+// postAuthConfig godoc
+func postAuthConfig(authConfig *AuthConfig) (*version.Info, *AuthError) {
 
 	var (
-		serverName         = stormCluster.ServerName
-		server             = stormCluster.Server
-		token              = stormCluster.Token
-		serverCADataString = stormCluster.ServerCADataString
+		serverName         = authConfig.ServerName
+		server             = authConfig.Server
+		token              = authConfig.Token
+		serverCADataString = authConfig.ServerCADataString
 		clientset          = &kubernetes.Clientset{}
-		authFriendlyErr    = &AuthFriendlyErr{}
+		authError          = &AuthError{}
+		serverVersion      = &version.Info{}
 	)
 
 	kubeconfigPath := homeDir() + "/.kubestorm/" + hash(server)
 	serverHashPath := homeDir() + "/.kubestorm/" + serverName
 
 	if isFileExist(kubeconfigPath) && !isFileExist(serverHashPath) {
-		authFriendlyErr.Message = fmt.Sprintf("%v already exists", server)
-		authFriendlyErr.HTTPStatus = "409"
+		authError.Message = fmt.Sprintf("%v already exists", server)
+		authError.Code = 409
+		authError.Error = errors.New("")
 	} else {
 		if serverName != "" && server != "" && token != "" && serverCADataString != "" {
 			serverCAData, _ := b64.StdEncoding.DecodeString(serverCADataString)
@@ -74,104 +78,171 @@ func postClusterAuth(stormCluster *StormCluster) (*kubernetes.Clientset, *AuthFr
 			clientcmd.WriteToFile(*kubeconfig, "/tmp/"+serverName+"-kubeconfig")
 			// use the current context in kubeconfig
 			config, err := clientcmd.BuildConfigFromFlags(server, "/tmp/"+serverName+"-kubeconfig")
-			catchError(err)
+			if err != nil {
+				authError.Message = "Not able to create clientcmdapi config"
+				authError.Error = err
+				authError.Code = 500
+				return serverVersion, authError
+			}
 
 			// create the clientset
 			clientset, err = kubernetes.NewForConfig(config)
-			catchError(err)
+			if err != nil {
+				authError.Message = "Not able to create clientset"
+				authError.Error = err
+				authError.Code = 500
+				return serverVersion, authError
+			}
 
 			// test the clientset
-			serverVersion, err := clientset.ServerVersion()
+			serverVersion, err = clientset.ServerVersion()
 			if err != nil {
-				authFriendlyErr.Message = fmt.Sprintf("Authentication Failed. %v", err)
-				authFriendlyErr.HTTPStatus = "401"
-			} else {
-				clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
-				writeToFile([]byte(hash(server)), serverHashPath)
-				authFriendlyErr.Message = fmt.Sprintf("%v", serverVersion)
+				authError.Message = "Not able to retrieve server version. Something went wrong!"
+				authError.Error = err
+				authError.Code = 401
+				return serverVersion, authError
 			}
+
+			clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
+			writeToFile([]byte(hash(server)), serverHashPath)
+
 		} else {
-			authFriendlyErr.Message = "Invalid Request"
-			authFriendlyErr.HTTPStatus = "400"
+			authError.Message = "Invalid Request"
+			authError.Code = 400
+			authError.Error = errors.New("Missing parameter")
 		}
 	}
 
-	return clientset, authFriendlyErr
+	return serverVersion, authError
 }
 
-// getClusterAuth
-func getClusterAuth(serverName string) *StormCluster {
-	serverHashPath := homeDir() + "/.kubestorm/" + serverName
-	hashID, err := ioutil.ReadFile(serverHashPath)
-	catchError(err)
-	kubeconfigPath := homeDir() + "/.kubestorm/" + string(hashID)
-	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
-	catchError(err)
-	return &StormCluster{
-		Server:             kubeconfig.Clusters[serverName].Server,
-		ServerName:         serverName,
-		Token:              kubeconfig.AuthInfos[serverName].Token,
-		ServerCADataString: b64.StdEncoding.EncodeToString(kubeconfig.Clusters[serverName].CertificateAuthorityData),
-	}
-}
-
-// deleteClusterAuth
-func deleteClusterAuth(serverName string) *AuthFriendlyErr {
+// getAuthConfig
+func getAuthConfig(serverName string) (*AuthConfig, *AuthError) {
 	var (
-		authFriendlyErr = &AuthFriendlyErr{}
+		authError  = &AuthError{}
+		authConfig = &AuthConfig{}
+	)
+
+	hashID, err := getHashIDFromServerName(serverName)
+	if err != nil {
+		authError.Message = fmt.Sprintf("Not able to get config file for %v", serverName)
+		authError.Code = 400
+		authError.Error = err
+		return authConfig, authError
+	}
+
+	kubeconfigPath := getKubeconfigPathFromHash(hashID)
+	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+
+	if err != nil {
+		authError.Message = fmt.Sprintf("Not able to load kubeconfig for %v", serverName)
+		authError.Code = 400
+		authError.Error = err
+		return authConfig, authError
+	}
+
+	authConfig.Server = kubeconfig.Clusters[serverName].Server
+	authConfig.ServerName = serverName
+	authConfig.Token = kubeconfig.AuthInfos[serverName].Token
+	authConfig.ServerCADataString = b64.StdEncoding.EncodeToString(kubeconfig.Clusters[serverName].CertificateAuthorityData)
+
+	return authConfig, authError
+}
+
+// deleteAuthConfig
+func deleteAuthConfig(serverName string) *AuthError {
+	var (
+		authError = &AuthError{}
 	)
 
 	serverHashPath := homeDir() + "/.kubestorm/" + serverName
-	if !isFileExist(serverHashPath) {
-		authFriendlyErr.Message = fmt.Sprintf("%v does not exists!", serverName)
-		authFriendlyErr.HTTPStatus = "404"
-	} else {
-		hashID, err := ioutil.ReadFile(serverHashPath)
-		catchError(err)
-		kubeconfigPath := homeDir() + "/.kubestorm/" + string(hashID)
+	if _, err := os.Stat(serverHashPath); err == nil {
+		hashID, err := getHashIDFromServerName(serverName)
+		if err != nil {
+			authError.Message = fmt.Sprintf("Not able to read %v", serverHashPath)
+			authError.Code = 400
+			authError.Error = err
+			return authError
+		}
+		kubeconfigPath := getKubeconfigPathFromHash(hashID)
 
 		err = os.Remove(kubeconfigPath)
+		if err != nil {
+			authError.Message = fmt.Sprintf("Not able to remove %v", kubeconfigPath)
+			authError.Code = 400
+			authError.Error = err
+			return authError
+		}
 		err = os.Remove(serverHashPath)
 		if err != nil {
-			authFriendlyErr.Message = fmt.Sprintf("%v", err)
-		} else {
-			authFriendlyErr.Message = fmt.Sprintf("%v is successfully removed", serverName)
-			authFriendlyErr.HTTPStatus = "200"
+			authError.Message = fmt.Sprintf("Not able to remove %v", serverHashPath)
+			authError.Code = 400
+			authError.Error = err
+			return authError
 		}
+	} else {
+		authError.Message = fmt.Sprintf("%v does not exists!", serverHashPath)
+		authError.Code = 404
+		authError.Error = err
 	}
 
-	return authFriendlyErr
+	return authError
+}
+
+// getHashIDFromServerName godoc
+func getHashIDFromServerName(serverName string) ([]byte, error) {
+	return ioutil.ReadFile(homeDir() + "/.kubestorm/" + serverName)
+}
+
+// getKubeconfigPathFromHash godoc
+func getKubeconfigPathFromHash(hashID []byte) string {
+	return homeDir() + "/.kubestorm/" + string(hashID)
 }
 
 // getClientSet godoc
-func getClientSet(serverName string) (*kubernetes.Clientset, *AuthFriendlyErr) {
+func getClientSet(serverName string) (*kubernetes.Clientset, *AuthError) {
 	var (
-		authFriendlyErr = &AuthFriendlyErr{}
-		clientset       = &kubernetes.Clientset{}
+		authError = &AuthError{}
+		clientset = &kubernetes.Clientset{}
 	)
 
-	serverHashPath := homeDir() + "/.kubestorm/" + serverName
-	if isFileExist(serverHashPath) {
-		hashID, err := ioutil.ReadFile(serverHashPath)
-		catchError(err)
-		kubeconfigPath := homeDir() + "/.kubestorm/" + string(hashID)
-		kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
-		catchError(err)
-		// use the current context in kubeconfig
-		config, err := clientcmd.BuildConfigFromFlags(kubeconfig.Clusters[serverName].Server, kubeconfigPath)
-		catchError(err)
-
-		// create the clientset
-		clientset, err = kubernetes.NewForConfig(config)
-		catchError(err)
-	} else {
-		authFriendlyErr.Message = fmt.Sprintf("%v cluster config is not found", serverName)
-		authFriendlyErr.HTTPStatus = "404"
+	hashID, err := getHashIDFromServerName(serverName)
+	if err != nil {
+		authError.Message = fmt.Sprintf("Not able to get config for %v", serverName)
+		authError.Code = 400
+		authError.Error = err
+		return clientset, authError
+	}
+	kubeconfigPath := getKubeconfigPathFromHash(hashID)
+	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		authError.Message = "Not able to load config from file"
+		authError.Error = err
+		authError.Code = 500
+		return clientset, authError
 	}
 
-	return clientset, authFriendlyErr
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags(kubeconfig.Clusters[serverName].Server, kubeconfigPath)
+	if err != nil {
+		authError.Message = "Not able to create clientcmdapi config"
+		authError.Error = err
+		authError.Code = 500
+		return clientset, authError
+	}
+
+	// create the clientset
+	clientset, err = kubernetes.NewForConfig(config)
+	if err != nil {
+		authError.Message = fmt.Sprintf("Not able to create clientset for %v", serverName)
+		authError.Code = 400
+		authError.Error = err
+	}
+
+	return clientset, authError
 }
 
+// generateKubeconfigAwsCli godoc
 func generateKubeconfigAwsCli(clusterName string, roleArn string, awsRegion string) {
 	//	Split the entire command up using ' ' as the delimeter
 	parts := strings.Split("aws eks --region "+awsRegion+" update-kubeconfig --name "+strings.TrimSpace(clusterName)+" --role-arn "+strings.TrimSpace(roleArn), " ")

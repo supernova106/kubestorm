@@ -8,7 +8,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"github.com/supernova106/kubestorm/docs"
 	"github.com/supernova106/kubestorm/routers"
 	"github.com/supernova106/kubestorm/utils"
 
@@ -34,9 +33,9 @@ func init() {
 	})
 }
 
-// @title Swagger Simple Kubernetes Dashboard
+// @title Swagger Kubestorm API
 // @version 1.0
-// @description This is a API to interact with Kubernetes Services.
+// @description This is a API to interact with Kubernetes Objects
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Binh Nguyen
@@ -46,7 +45,9 @@ func init() {
 // @license.name MIT Licensed
 // @license.url https://opensource.org/licenses/MIT
 
-// @BasePath /v1
+// @host localhost:8080
+// @BasePath /api/v1
+// @schemes http https
 func main() {
 	gin.ForceConsoleColor()
 	router := gin.New()
@@ -74,20 +75,15 @@ func main() {
 		AllowMethods: []string{"GET", "HEAD", "OPTIONS", "POST"},
 	}))
 
-	v1 := router.Group("/v1")
+	apiv1 := router.Group("/api/v1")
 	{
-		v1.GET("/nodes/:name", routers.GetNodes)
-		v1.GET("/pods/:name", routers.GetPods)
-		v1.GET("/namespaces/:name", routers.GetNamespaces)
-		v1.POST("/auth/:name", routers.Auth)
-		v1.GET("/auth/:name", routers.Auth)
-		v1.DELETE("/auth/:name", routers.Auth)
-		v1.GET("/status", routers.GetStatus)
+		apiv1.GET("/resources", routers.GetResources)
+		apiv1.POST("/auth/:cluster", routers.Auth)
+		apiv1.GET("/auth/:cluster", routers.Auth)
+		apiv1.DELETE("/auth/:cluster", routers.Auth)
+		apiv1.GET("/status", routers.GetStatus)
 	}
 
-	docs.SwaggerInfo.Schemes = []string{"https", "http"}
-
-	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	router.Run(":8080") // listen and serve on 0.0.0.0:8080
 }

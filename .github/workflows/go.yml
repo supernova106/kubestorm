@@ -33,3 +33,6 @@ jobs:
 
       - name: Build
         run: go build -v .
+
+      - name: Release
+        run: make release

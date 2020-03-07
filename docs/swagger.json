@@ -1,8 +1,12 @@
 {
+    "schemes": [
+        "http",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
-        "description": "This is a API to interact with Kubernetes Services.",
-        "title": "Swagger Simple Kubernetes Dashboard",
+        "description": "This is a API to interact with Kubernetes Objects",
+        "title": "Swagger Kubestorm API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "Binh Nguyen",
@@ -15,25 +19,9 @@
         },
         "version": "1.0"
     },
-    "basePath": "/v1",
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
     "paths": {
-        "/eks/list-clusters": {
-            "get": {
-                "description": "get string by GET",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "List EKS Clusters",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routers.AccountListClusterOutput"
-                        }
-                    }
-                }
-            }
-        },
         "/status": {
             "get": {
                 "description": "get string by GET",
@@ -57,64 +45,6 @@
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "routers.AccountListClusterOutput": {
-            "type": "object",
-            "properties": {
-                "accountID": {
-                    "type": "string"
-                },
-                "clusters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/routers.ListClusterOutput"
-                    }
-                },
-                "metadata": {
-                    "type": "object",
-                    "$ref": "#/definitions/routers.AccountMetadata"
-                }
-            }
-        },
-        "routers.AccountMetadata": {
-            "type": "object",
-            "properties": {
-                "environment": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "routers.ListClusterOutput": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "description": "The Unix epoch timestamp in seconds for when the cluster was created.",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "The name of the cluster.",
-                    "type": "string"
-                },
-                "region": {
-                    "description": "AWS Region",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "The current status of the cluster.",
-                    "type": "string"
-                },
-                "version": {
-                    "description": "The Kubernetes server version for the cluster.",
-                    "type": "string"
-                },
-                "vpcId": {
-                    "description": "Vpc ID of the cluster",
                     "type": "string"
                 }
             }

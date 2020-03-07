@@ -12,7 +12,7 @@ SERVER_URL=$(export CURRENT_CONTEXT=$(kubectl config current-context) && export 
 CA_DATA=$(echo $(kubectl get secret -n kube-system -o go-template='{{index .data "ca.crt" }}' $(kubectl get sa kubestorm-user -n kube-system -o go-template="{{range .secrets}}{{.name}}{{end}}")))
 TOKEN=$(echo $(kubectl get secret -n kube-system -o go-template='{{index .data "token" }}' $(kubectl get sa kubestorm-user -n kube-system -o go-template="{{range .secrets}}{{.name}}{{end}}")) | base64 --decode)
 
-curl --location --request POST "${KUBESTORM_URL}/v1/auth/${CLUSTER_NAME}" \
+curl --location --request POST "${KUBESTORM_URL}/api/v1/auth/${CLUSTER_NAME}" \
 --form "server=${SERVER_URL}" \
 --form "token=${TOKEN}" \
 --form "serverCADataString=${CA_DATA}"
