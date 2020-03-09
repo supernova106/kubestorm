@@ -104,7 +104,9 @@ func postAuthConfig(authConfig *AuthConfig) (*version.Info, *AuthError) {
 			}
 
 			clientcmd.WriteToFile(*kubeconfig, kubeconfigPath)
-			writeToFile([]byte(hash(server)), serverHashPath)
+			if err := writeToFile([]byte(hash(server)), serverHashPath); err != nil {
+				panic(err.Error())
+			}
 
 		} else {
 			authError.Message = "Invalid Request"

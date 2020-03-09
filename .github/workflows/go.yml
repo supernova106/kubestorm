@@ -36,3 +36,11 @@ jobs:
 
       - name: Build
         run: go build -v .
+
+      - name: Test
+        run: go test ./routers -v -covermode=atomic -coverprofile=coverage.out
+
+      - name: Code coverage
+        run: bash <(curl -s https://codecov.io/bash)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

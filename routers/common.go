@@ -55,14 +55,13 @@ func hash(s string) string {
 // catchError godoc
 func catchError(e error) {
 	if e != nil {
-		panic(e)
+		panic(e.Error())
 	}
 }
 
 // writeToFie godoc
-func writeToFile(data []byte, fileName string) {
-	err := ioutil.WriteFile(fileName, data, 0644)
-	catchError(err)
+func writeToFile(data []byte, fileName string) error {
+	return ioutil.WriteFile(fileName, data, 0644)
 }
 
 // Error godoc
