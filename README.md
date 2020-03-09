@@ -1,4 +1,5 @@
 ![Go](https://github.com/supernova106/kubestorm/workflows/Go/badge.svg?branch=master)
+![Codecov](https://codecov.io/gh/supernova106/kubestorm/branch/master/graph/badge.svg)
 
 # kubestorm
 
