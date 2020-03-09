@@ -2,12 +2,14 @@ name: goreleaser
 
 on:
   push:
+    branches-ignore:
+      - "**"
     tags:
-      - "*"
+      - "v*.*.*"
 
 jobs:
-  build:
-    name: Build
+  release:
+    name: Release
     runs-on: ubuntu-latest
     env:
       GO111MODULE: "on"
@@ -23,6 +25,17 @@ jobs:
 
       - name: Unshallow
         run: git fetch --prune --unshallow
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          MINOR=${TAG%.*}
+          MAJOR=${MINOR%.*}
+          echo ::set-output name=tag_name::${TAG}
+          echo ::set-output name=minor_tag::${MINOR}
+          echo ::set-output name=major_tag::${MAJOR}
+          echo ::set-output name=major_exists::$(git show-ref origin/releases/${MAJOR})
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v1
