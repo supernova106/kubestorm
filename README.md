@@ -133,8 +133,10 @@ curl --location --request GET "http://localhost:8080/api/v1/resources?cluster=${
 
 ## Todo
 
+- Add more unit testings
+- Develop Simple Dashboard for Kubernetes
 - Support S3 to store configurations
-- Showing Information about Kubernets objects: `nodes`, `services`, `namespace`, `deployment`, `events`
+- Slack Chatbot integration
 
 ## Contributors
 
